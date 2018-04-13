@@ -1,1 +1,119 @@
+library(chron)
+library(RColorBrewer)
+library(lattice)
+library(ncdf)
 
+
+getwd()
+#NetCDF in R
+ncname<-"cru_ts3_23_1901_2014_tmp_dat"
+ncfname<-paste(ncname,".nc",sep="")
+dname<-"tmp"                         #air temperature
+ncin<-open.ncdf(ncfname)
+str(ncin)
+print(ncin)
+lon<-get.var.ncdf(ncin,"lon")
+nlon<-dim(lon)
+head(lon)
+lat<-get.var.ncdf(ncin,"lat",verbose=F)
+head(lat)
+lat<-sort(lat)
+head(lat)
+nlat<-dim(lat)
+nlat
+print(c(nlon,nlat))
+t<-get.var.ncdf(ncin,"time")
+tunits<-att.get.ncdf(ncin,"time","units")
+t
+nt<-dim(t)
+nt
+tunits
+tp.array<-get.var.ncdf(ncin,dname)
+str(tp.array)
+dim(tp.array)
+dlname<-att.get.ncdf(ncin,dname,"long_name")
+dunits<-att.get.ncdf(ncin,dname,"units")
+fillvalue<-att.get.ncdf(ncin,dname,"_FillValue")
+dlname
+dunits
+fillvalue
+m<-1                     #air temperature in 01.1901
+tp.slice<-tp.array[,,m]
+tp.slice
+str(tp.slice)
+dim(tp.slice)
+image(lon,lat,tp.slice,col=rev(brewer.pal(10,"RdBu")))
+grid<-expand.grid(lon=lon,lat=lat)
+cutpts<-c(-50,-40,-30,-20,-10,0,10,20,30,40,50)
+levelplot(tp.slice~lon*lat,data=grid,at=cutpts,cuts=11,pretty=T,col.regions=(rev(brewer.pal(10,"RdBu"))))
+lonlat<-expand.grid(lon,lat)
+tmp.vec<-as.vector(tp.slice)
+length(tmp.vec)
+tmp.df01<-data.frame(cbind(lonlat,tmp.vec))
+names(tmp.df01)<-c("lon","lat",paste(dname,as.character(m),sep="_"))
+head(na.omit(tmp.df01),20)
+csvfile<-"cru_tmp_1.csv"
+write.table(na.omit(tmp.df01),csvfile,row.names = FALSE,sep = ",")
+tmp.vec.long<-as.vector(tp.array)
+tmp.mat<-matrix(tmp.vec.long,nrow=nlon*nlat,ncol=nt)
+dim(tmp.mat)
+tmp.mat1<-na.omit(tmp.mat)
+head(na.omit(tmp.mat[,1]))
+lonlat<-expand.grid(lon,lat)
+
+# annual mean temperature
+
+tmp.mean<-t(apply(tmp.mat,1,tapply,gl(114,12),mean))
+head(na.omit(tmp.mean))
+csvfile<-"cru_tmp_mean.csv"
+write.table(tmp.mean,csvfile,row.names = FALSE,sep = ",")
+str(tmp.mean)
+cor(tmp.mean)
+tmp.mean1<-na.omit(tmp.mean)
+tmp.mean1<-as.data.frame(tmp.mean1)
+head(tmp.mean1)
+tmp.mean1$`114`
+tmp.mean2<-tmp.mean1[,-c(109:114)]
+head(tmp.mean2)
+tmp.df03<-data.frame(cbind(lonlat,tmp.mean))
+tmp.df03[,1]
+tmp.df04<-tmp.df03[,10]
+tmp.df04<-matrix(tmp.df04,nrow=720,ncol=360)
+head(tmp.df04)
+str(tmp.df04)
+image(lon,lat,tmp.df04,col=rev(brewer.pal(10,"RdBu")))
+str(lon)
+str(lat)
+tmp.mean3[,1]
+tmp.mean3<-t(tmp.mean2)
+tmp.mean3[,1]
+year<-c(1:109)
+year<-matrix(year,ncol=1)
+str(year)
+head(tmp.mean3)
+tmp.mean3<-cbind(year,tmp.mean3)
+tmp.mean3[,1]
+x<-tmp.mean3[,2]
+x
+y<-tmp.mean3[,5]
+
+b<-read.csv(file.choose(),header=TRUE)  #can use also tmp.mean3, because the data is to big, so i read again the data
+b<-t(b)
+b[,1]
+d<-b[-c(107:114),]
+d[,1]
+dim(d)
+ncol(d)
+year<-matrix(1901:2006,ncol=1)
+str(year)
+
+# weltweit climate change (time series correlation)  
+
+for(i in 1:ncol(d)){
+    tim[i]=cor(year,d[,i])}
+str(tim)
+tim1<-matrix(tim,nrow=720,ncol=360)
+str(tim1)
+csvfile2<-"correlation_final.csv"
+write.csv(tim1,csvfile2,row.names = FALSE)
+image(lon,lat,tim1,col=rev(brewer.pal(10,"RdBu")))
